@@ -1,0 +1,59 @@
+#!/bin/bash 
+#Author: New Wavex86 
+#Date Created: Thu 27 Aug 2020
+#A script to archive the ace of spades websites
+#Should be used in conjunction with cron @daily
+
+#Added for git, variable to be defined by user
+ARCHIVE_PATH="/g/" 
+
+if [ -z $ARCHIVE_PATH ];
+then
+	echo "PAth not set, install.sh must be run first exiting now!"
+	exit 2
+fi
+
+
+#Check if directory exists
+if [ ! -d $ARCHIVE_PATH ];
+then
+	echo "Archive directory changed or moved!"
+	sleep 2
+	exit 2
+
+fi
+
+#Create container for html code
+FILE=$(date | awk ' { print $1 "-" $2 "-" $3 "-" $4 }')
+
+touch $FILE
+
+#Download html code
+wget http://ace.mu.nu/ 
+cat index.html > $FILE
+rm index.html
+
+#Move container to usb
+mv $FILE ${ARCHIVE_PATH}${FILE}.html
+
+
+#Tarball the files that are month old
+AMOUNT=$( ls $ARCHIVE_PATH | awk ' !/gz$/ {print $0}'| wc -l )
+					#awk is added to offset the tar
+					#archives
+
+if [ $AMOUNT == 30 ];
+then
+	
+	echo "Compressing"
+	tar -zcvf $ARCHIVE_PATH"$(date | awk ' {print $3 "-" $4}')".tar.gz --exclude='*.gz' $ARCHIVE_PATH
+											  #Dont compress already compressed files
+	#Clear out folder
+	rm -r $ARCHIVE_PATH/*.html
+
+
+fi
+
+echo "All Done"
+
+exit 0 
